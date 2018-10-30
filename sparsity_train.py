@@ -2,7 +2,6 @@ from __future__ import division
 
 from yolomodel import *
 from util  import *
-# from utils.datasets import *
 from parse_config import *
 import os
 import argparse
@@ -26,6 +25,8 @@ def arg_parse():
                         default="416", type=str)
     parser.add_argument("--n_cpu",dest='n_cpu',type=int,default=2,help="torch多线程核数")
     parser.add_argument("--use_cuda", type=bool, default=True, help="whether to use cuda if available")
+    parser.add_argument("-sr", dest='sr', action='store_true',
+                    help='train with channel sparsity regularization')
     parser.add_argument('--s', type=float, default=0.0001,
                         help='稀疏化比率')
     parser.add_argument("--checkpoint_interval", type=int, default=1, help="interval between saving model weights")
@@ -84,6 +85,8 @@ def train():
             optimizer.zero_grad()
             loss = model(imgs, targets)
             loss.backward()
+            if args.sr:
+                updateBN()
             updateBN(model,args.s)
             optimizer.step()
             print(

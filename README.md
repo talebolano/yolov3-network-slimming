@@ -1,5 +1,5 @@
 # yolov3-network-slimming
-将Learning Efficient Convolutional Networks Through Network Slimming (ICCV 2017)应用在yolov3上
+将[Learning Efficient Convolutional Networks Through Network Slimming (ICCV 2017)](http://openaccess.thecvf.com/content_iccv_2017/html/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.html)应用在yolov3上<bar>
 
 # 环境
 pytorch 0.4 

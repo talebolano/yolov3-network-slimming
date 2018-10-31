@@ -317,7 +317,7 @@ class Darknet(nn.Module):
                 x = self.module_list[i](x)
             elif module_type == "yolo":
                 if is_training:
-                    x, *losses = self.module_list[i](x, targets)
+                    x, *losses = self.module_list[i][0](x, targets)
                     for name, loss in zip(self.loss_names, losses):
                         self.losses[name] += loss
                 # Test phase: Get detections

@@ -138,11 +138,11 @@ def train():
                 y, i = torch.sort(bn)  # y,i是从小到大排列所有的bn，y是weight，i是序号
                 number = int(len(y)/5)  # 将总类分为5组
                 # 输出稀疏化水平
-                print("0~20%%:%d,20~40%%:%d,40~60%%:%d,60~80%%:%d,80~100%%:%d"%(y[number],y[2*number],y[3*number],y[4*number],y[-1]))
-                
+                print("0~20%%:%f,20~40%%:%f,40~60%%:%f,60~80%%:%f,80~100%%:%f"%(y[number],y[2*number],y[3*number],y[4*number],y[-1]))
+                model.train()
             model.save_weights("%s/yolov3_sparsity_%d.weights" % (args.checkpoint_dir, epoch))
             print("save weights in %s/yolov3_sparsity_%d.weights" % (args.checkpoint_dir, epoch))
-            model.train()
+  
 
 
 if __name__ =='__main__':

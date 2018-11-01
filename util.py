@@ -243,16 +243,15 @@ def write_cfg(cfgfile,cfg):
         if 'batch_normalize' in block:
             block['filters']=cfg[x]
             x= x+1
-
     with open(prunedcfg,'w') as f:
-
         for block in blocks:
             for i in block:
                 if i=="type":
                     f.write('\n')
                     f.write("["+block[i]+"]\n")
-                else:
-                    f.write(i+"="+str(block[i])+'\n')
+                    for j in block:
+                        if j != "type":
+                            f.write(i+"="+str(block[i])+'\n')
     print('save pruned cfg file in %s'%prunedcfg)
     return prunedcfg
 

@@ -243,6 +243,7 @@ def write_cfg(cfgfile,cfg):
         if 'batch_normalize' in block:
             block['filters']=cfg[x]
             x= x+1
+    ##
     with open(prunedcfg,'w') as f:
         for block in blocks:
             for i in block:

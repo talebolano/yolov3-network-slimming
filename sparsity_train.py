@@ -35,11 +35,12 @@ def arg_parse():
     )
     return parser.parse_args()
 
-
-def updateBN(model,s):
-    for m in model.modules():
+# 只稀疏化非shortcut的层
+def updateBN(model,s,donntprune):
+    for k,m in enumerate(model.modules()):
         if isinstance(m, nn.BatchNorm2d):
-            m.weight.grad.data.add_(s*torch.sign(m.weight.data))
+            if k not in donntprune:
+                m.weight.grad.data.add_(s*torch.sign(m.weight.data))
 
 
 def train():
@@ -77,6 +78,16 @@ def train():
     #optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
     optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate,momentum=momentum,weight_decay=decay)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
+    #记录哪些是shortcut层
+    donntprune = []
+    for k, m in enumerate(model.modules()):
+        if isinstance(m, shortcutLayer):
+            x = k + m.froms - 8
+            donntprune.append(x)
+            x = k - 3
+            donntprune.append(x)
+    # print(donntprune)
+
     for epoch in range(args.epochs):
         exp_lr_scheduler.step(epoch)
         for batch_i, (_, imgs, targets) in enumerate(dataloader):
@@ -86,8 +97,7 @@ def train():
             loss = model(imgs, targets)
             loss.backward()
             if args.sr:
-                updateBN()
-            updateBN(model,args.s)
+                updateBN(model,args.s,donntprune)
             optimizer.step()
             print(
                 "[Epoch %d/%d, Batch %d/%d] [Losses: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f, recall: %.5f, precision: %.5f]"
@@ -110,7 +120,29 @@ def train():
             model.seen += imgs.size(0)
 
         if epoch % args.checkpoint_interval == 0:
-            model.save_weights("%s/%d.weights" % (args.checkpoint_dir, epoch))
+            if args.sr:
+                model.train(False)
+                total = 0
+                for k, m in enumerate(model.modules()):
+                    if isinstance(m, nn.BatchNorm2d):
+                        if k not in donntprune:
+                            total += m.weight.data.shape[0]
+                bn = torch.zeros(total)
+                index = 0
+                for k, m in enumerate(model.modules()):
+                    if isinstance(m, nn.BatchNorm2d):
+                        if k not in donntprune:
+                            size = m.weight.data.shape[0]
+                            bn[index:(index + size)] = m.weight.data.abs().clone()
+                            index += size
+                y, i = torch.sort(bn)  # y,i是从小到大排列所有的bn，y是weight，i是序号
+                number = int(len(y)/5)  # 将总类分为5组
+                # 输出稀疏化水平
+                print("0~20%%:%d,20~40%%:%d,40~60%%:%d,60~80%%:%d,80~100%%:%d"%(y[number],y[2*number],y[3*number],y[4*number],y[-1]))
+                
+            model.save_weights("%s/yolov3_sparsity_%d.weights" % (args.checkpoint_dir, epoch))
+            print("save weights in %s/yolov3_sparsity_%d.weights" % (args.checkpoint_dir, epoch))
+            model.train()
 
 
 if __name__ =='__main__':

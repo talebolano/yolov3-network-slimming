@@ -29,7 +29,7 @@ print("load weightsfile")
 model.load_weights(args.weightsfile)
 if CUDA:
     model.cuda()
-# 根据shortcut找到不应该被裁的batch，并记录其序号，放在donntprune中
+# 根据shortcut找到不应该被裁的连接层，并记录其序号，放在donntprune中
 donntprune = []
 for k,m in enumerate(model.modules()):
     if isinstance(m, shortcutLayer):
@@ -38,7 +38,7 @@ for k,m in enumerate(model.modules()):
         x = k-3
         donntprune.append(x)
 #print(donntprune)
-#统计所有应该被裁的batch的总大小
+#统计所有应该被裁的连接层的总大小
 total = 0
 for k,m in enumerate(model.modules()):
      if isinstance(m, nn.BatchNorm2d):
@@ -169,5 +169,6 @@ print('prune done!')
 print('pruned ratio %.3f'%pruned_ratio)
 prunedweights = os.path.join('\\'.join(args.weightsfile.split("/")[0:-1]),"prune_"+args.weightsfile.split("/")[-1])
 print('save weights file in %s'%prunedweights)
+#保存新模型权重
 newmodel.save_weights(prunedweights)
 print('done!')

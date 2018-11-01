@@ -252,7 +252,7 @@ def write_cfg(cfgfile,cfg):
                     f.write("["+block[i]+"]\n")
                     for j in block:
                         if j != "type":
-                            f.write(i+"="+str(block[i])+'\n')
+                            f.write(j+"="+str(block[j])+'\n')
     print('save pruned cfg file in %s'%prunedcfg)
     return prunedcfg
 

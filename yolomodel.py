@@ -428,3 +428,30 @@ class Darknet(nn.Module):
                     conv.bias.data.cpu().numpy().tofile(fp)
                 conv.weight.data.cpu().numpy().tofile(fp)
         fp.close()
+        
+    def model_init(self):
+        """init"""
+        for i in range(len(self.module_list)):
+            module_type = self.blocks[i + 1]["type"]
+            # If module_type is convolutional load weights
+            # Otherwise ignore.
+            if module_type == "convolutional":
+                model = self.module_list[i]
+                try:
+                    batch_normalize = int(self.blocks[i + 1]["batch_normalize"])
+                except:
+                    batch_normalize = 0
+                conv = model[0]
+
+                if (batch_normalize):
+                    bn = model[1]
+                    torch.nn.init.normal_(bn.weight.data)
+                    torch.nn.init.constant_(bn.bias.data,1.0)
+                    torch.nn.init.normal_(bn.running_mean)
+                    torch.nn.init.constant_(bn.running_var,1.0)
+
+                else:
+                    torch.nn.init.constant_(conv.bias.data,1.0)
+                torch.nn.init.xavier_uniform_(conv.weight.data, gain=1)        
+        
+

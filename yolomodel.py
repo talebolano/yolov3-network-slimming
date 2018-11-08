@@ -14,6 +14,12 @@ class shortcutLayer(nn.Module):
         self.froms = froms
 
 
+class Reorg(nn.Module):
+    def __init__(self,stride):
+        super(Reorg,self).__init__()
+        self.stride = stride
+
+
 class Route(nn.Module):
     def __init__(self,layers):
         super(Route, self).__init__()
@@ -251,29 +257,42 @@ def create_modules(blocks):
             shortcut = shortcutLayer(froms)
             module.add_module("shortcut_{}".format(index), shortcut)
             # Yolo is the detection layer
-        elif x["type"] == "yolo":
-            mask = x["mask"].split(",")
-            mask = [int(x) for x in mask]
-
+        elif x["type"] == "yolo" or x["type"] == "region":
+            try:
+                mask = x["mask"].split(",")
+                mask = [int(x) for x in mask]
+            except:
+                mask = [int(x) for x in range(int(x['num']))]
             anchors = x["anchors"].split(",")
-            anchors = [int(a) for a in anchors]
+            anchors = [a for a in anchors]
             anchors = [(anchors[i], anchors[i + 1]) for i in range(0, len(anchors), 2)]
             anchors = [anchors[i] for i in mask]
             num_classes = int(x["classes"])
             img_height = int(net_info["height"])
-            ignore_thresh = float(x["ignore_thresh"])
+            try:
+                ignore_thresh = float(x["ignore_thresh"])
+            except:
+                ignore_thresh = float(x["thresh"])
             detection = DetectionLayer(anchors,num_classes,img_height,ignore_thresh)
             module.add_module("Detection_{}".format(index), detection)
-
 
         elif x["type"] == "maxpool":
             kernel_size = int(x["size"])
             stride = int(x["stride"])
             pool = nn.MaxPool2d(stride=stride,kernel_size=kernel_size)
             module.add_module("maxpool_{0}".format(index), pool)
+
+        elif x["type"] == "reorg":
+            stride = int(x["stride"])
+            reorg = Reorg(stride=stride)
+            module.add_module("reorg_{0}".format(index),reorg)
+            filters = filters*4
+
         module_list.append(module)
         prev_filters = filters
         output_filters.append(filters)
+
+
     return (net_info, module_list)
 
 class Darknet(nn.Module):
@@ -292,7 +311,6 @@ class Darknet(nn.Module):
         outputs = [] #We cache the outputs for the route layer
         layer_outputs = []
         self.losses = defaultdict(float)
-        write = 0  # This is explained a bit later
         for i, module in enumerate(modules):
             module_type = (module["type"])
             if module_type == "convolutional" or module_type == "upsample":
@@ -315,7 +333,14 @@ class Darknet(nn.Module):
                 x = outputs[i + from_]+outputs[i - 1]
             elif module_type =="maxpool":
                 x = self.module_list[i](x)
-            elif module_type == "yolo":
+            elif module_type == "reorg":
+                stride = int(module["stride"])
+                B,C,H,W = x.size()
+                x = x.view(B, C, H / stride, stride, W / stride, stride).transpose(3, 4).contiguous()
+                x = x.view(B, C, H / stride * W / stride, stride * stride).transpose(2, 3).contiguous()
+                x = x.view(B, C, stride * stride, H / stride, W / stride).transpose(1, 2).contiguous()
+                x = x.view(B, stride * stride * C, H / stride, W / stride)
+            elif module_type == "yolo" or module_type == "region":
                 if is_training:
                     x, *losses = self.module_list[i][0](x, targets)
                     for name, loss in zip(self.loss_names, losses):
@@ -428,13 +453,12 @@ class Darknet(nn.Module):
                     conv.bias.data.cpu().numpy().tofile(fp)
                 conv.weight.data.cpu().numpy().tofile(fp)
         fp.close()
-        
+
+
     def model_init(self):
         """init"""
         for i in range(len(self.module_list)):
             module_type = self.blocks[i + 1]["type"]
-            # If module_type is convolutional load weights
-            # Otherwise ignore.
             if module_type == "convolutional":
                 model = self.module_list[i]
                 try:
@@ -445,13 +469,9 @@ class Darknet(nn.Module):
 
                 if (batch_normalize):
                     bn = model[1]
-                    torch.nn.init.normal_(bn.weight.data)
-                    torch.nn.init.constant_(bn.bias.data,1.0)
-                    torch.nn.init.normal_(bn.running_mean)
-                    torch.nn.init.constant_(bn.running_var,1.0)
-
+                    torch.nn.init.constant_(bn.weight.data,0.5)
+                    torch.nn.init.constant_(bn.bias.data,0.0)
                 else:
-                    torch.nn.init.constant_(conv.bias.data,1.0)
-                torch.nn.init.xavier_uniform_(conv.weight.data, gain=1)        
-        
+                    torch.nn.init.constant_(conv.bias.data,0.0)
+                torch.nn.init.xavier_uniform_(conv.weight.data, gain=1)
 

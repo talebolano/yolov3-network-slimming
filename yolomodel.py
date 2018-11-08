@@ -264,7 +264,7 @@ def create_modules(blocks):
             except:
                 mask = [int(x) for x in range(int(x['num']))]
             anchors = x["anchors"].split(",")
-            anchors = [a for a in anchors]
+            anchors = [float(a) for a in anchors]
             anchors = [(anchors[i], anchors[i + 1]) for i in range(0, len(anchors), 2)]
             anchors = [anchors[i] for i in mask]
             num_classes = int(x["classes"])
@@ -336,10 +336,10 @@ class Darknet(nn.Module):
             elif module_type == "reorg":
                 stride = int(module["stride"])
                 B,C,H,W = x.size()
-                x = x.view(B, C, H / stride, stride, W / stride, stride).transpose(3, 4).contiguous()
-                x = x.view(B, C, H / stride * W / stride, stride * stride).transpose(2, 3).contiguous()
-                x = x.view(B, C, stride * stride, H / stride, W / stride).transpose(1, 2).contiguous()
-                x = x.view(B, stride * stride * C, H / stride, W / stride)
+                x = x.view(B, C, int(H / stride), stride, int(W / stride), stride).transpose(3, 4).contiguous()
+                x = x.view(B, C, int(H / stride * W / stride), int(stride * stride)).transpose(2, 3).contiguous()
+                x = x.view(B, C, int(stride * stride), int(H / stride), int(W / stride)).transpose(1, 2).contiguous()
+                x = x.view(B, int(stride * stride * C), int(H / stride), int(W / stride))
             elif module_type == "yolo" or module_type == "region":
                 if is_training:
                     x, *losses = self.module_list[i][0](x, targets)

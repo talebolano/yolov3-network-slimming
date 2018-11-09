@@ -261,10 +261,12 @@ def create_modules(blocks):
             try:
                 mask = x["mask"].split(",")
                 mask = [int(x) for x in mask]
+                anchors = x["anchors"].split(",")
+                anchors = [int(a) for a in anchors]
             except:
                 mask = [int(x) for x in range(int(x['num']))]
-            anchors = x["anchors"].split(",")
-            anchors = [float(a) for a in anchors]
+                anchors = x["anchors"].split(",")
+                anchors = [32*float(a) for a in anchors]
             anchors = [(anchors[i], anchors[i + 1]) for i in range(0, len(anchors), 2)]
             anchors = [anchors[i] for i in mask]
             num_classes = int(x["classes"])

@@ -16,7 +16,7 @@ from torch.optim import lr_scheduler
 def arg_parse():
     parser = argparse.ArgumentParser(description="YOLO v3 Train")
     parser.add_argument("--image_folder", type=str, default=r"D:\yolotest\data\coco.data", help="path to dataset")
-    parser.add_argument("--epochs",dest="epochs",help="epochs",default=16)
+    parser.add_argument("--epochs",dest="epochs",help="epochs",default=2000)
     parser.add_argument("--cfg",dest="cfgfile",help="网络模型",
                         default=r"D:/yolotest/cfg/yolov3.cfg",type=str)
     parser.add_argument("--weights",dest="weightsfile",help="权重文件",
@@ -77,7 +77,7 @@ def train():
     Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
     #optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
     optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate,momentum=momentum,weight_decay=decay)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.1)
     #记录哪些是shortcut层
     donntprune = []
     for k, m in enumerate(model.modules()):

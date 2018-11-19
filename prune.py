@@ -136,8 +136,9 @@ for layer_id in range(len(old_modules)):
                     cfg_mask1 = cfg_mask3.squeeze(0)
                     #print(cfg_mask1.shape)
                 start_mask = cfg_mask1.clone()
-                #print(cfg_mask1)
-        # print(m0)
+            elif name[0].split("_")[0] == 'reorg':
+                stride = name[1].stride
+                cfg_mask[layer_id_in_cfg-1] = torch.squeeze(start_mask.expand(int(stride*stride),int(start_mask.size(0))).transpose(1,0).contiguous().view(1,-1))
             elif "_".join(name[0].split("_")[0:-1]) == 'conv_with_bn':
                 idx0 = np.squeeze(np.argwhere(np.asarray(start_mask.cpu().numpy())))
                 idx1 = np.squeeze(np.argwhere(np.asarray(end_mask.cpu().numpy())))

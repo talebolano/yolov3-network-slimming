@@ -269,6 +269,24 @@ def route_problem(model,ind):
     #print(sum1)
     return sum1-1
 
+def scale_gama(alpha,model,scale_down = False):
+    '''放缩bn层大小，加快稀疏'''
+    alpha_ = 1 / alpha
+
+    if not scale_down:
+        # after training we want to scale back up so need to invert alpha
+        alpha_  = alpha
+        alpha   = 1 / alpha
+    nnlist = model.module_list
+    for i in range(len(nnlist)):
+        for name in nnlist[i].named_children():
+            if "_".join(name[0].split("_")[0:-1]) == 'conv_with_bn':
+                name[1].weight.data =  name[1].weight.data * alpha_
+                #print(name[0])
+            elif "_".join(name[0].split("_")[0:-1]) == 'batch_norm':
+                name[1].weight.data =  name[1].weight.data * alpha
+                #print(name[0])
+    return model
 
 
 

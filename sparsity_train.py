@@ -33,6 +33,7 @@ def arg_parse():
     parser.add_argument(
         "--checkpoint_dir", type=str, default="checkpoints", help="directory where model checkpoints are saved"
     )
+    parser.add_argument("--alpha",type=float,default=1.,help="bn层放缩系数")
     return parser.parse_args()
 
 # 只稀疏化非shortcut的层
@@ -70,6 +71,7 @@ def train():
     if cuda:
         model = model.cuda()
     model.train()
+    model = scale_gama(alpha,model,scale_down=True)
     # Get dataloader
     dataloader = torch.utils.data.DataLoader(
         ListDataset(train_path,img_size=inp_dim), batch_size=batch_size, shuffle=False, num_workers=args.n_cpu
@@ -140,7 +142,9 @@ def train():
                 # 输出稀疏化水平
                 print("0~20%%:%f,20~40%%:%f,40~60%%:%f,60~80%%:%f,80~100%%:%f"%(y[number],y[2*number],y[3*number],y[4*number],y[-1]))
                 model.train()
+            model = scale_gama(alpha, model, scale_down=False)
             model.save_weights("%s/yolov3_sparsity_%d.weights" % (args.checkpoint_dir, epoch))
+            model = scale_gama(alpha, model, scale_down=True)
             print("save weights in %s/yolov3_sparsity_%d.weights" % (args.checkpoint_dir, epoch))
   
 

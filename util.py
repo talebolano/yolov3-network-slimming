@@ -289,6 +289,20 @@ def scale_gama(alpha,model,scale_down = False):
     return model
 
 
+def dontprune(model):
+
+    dontprune=[]
+    nnlist = model.module_list
+    for i in range(len(nnlist)):
+        for name in nnlist[i].named_children():
+            if name[0].split("_")[0] == 'shortcut':
+                if 'conv' in list(nnlist[name[1].froms+i].named_children())[0][0]:
+                    dontprune.append(name[1].froms+i)
+                else:
+                    dontprune.append(name[1].froms + i-1)
+                dontprune.append(i-1)
+    return dontprune
+
 
 
 

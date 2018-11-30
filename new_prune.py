@@ -121,6 +121,7 @@ print('--'*30)
 # 写出被减枝的cfg文件
 prunecfg = write_cfg(args.cfgfile,cfg)
 newmodel = Darknet(prunecfg)
+newmodel.header_info = model.header_info
 if CUDA:
     newmodel.cuda()
 old_modules = list(model.modules())

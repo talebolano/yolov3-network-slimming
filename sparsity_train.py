@@ -52,6 +52,7 @@ def train():
     classes_path = data_config["names"]
     classes = load_classes(classes_path)
     num_classes = len(classes)
+    alpha = args.alpha
     os.makedirs(args.checkpoint_dir, exist_ok=True)
 
     # Initiate model

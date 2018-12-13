@@ -20,4 +20,7 @@ python prune.py --cfg yolov3.cfg --weights checkpoints/yolov3_sparsity_100.weigh
 python sparsity_train.py --image_folder coco.data  --cfg prune_yolov3.cfg --weights prune_yolov3.weights 
 
 # 关于new_prune.py
-new_prune更新了算法，现在可以确保不会有某一层被减为0的情况发生，参考[RETHINKING THE SMALLER-NORM-LESSINFORMATIVE](https://arxiv.org/abs/1802.00124?context=cs)对剪枝后bn层β系数进行了保留
+new_prune更新了算法，现在可以确保不会有某一层被减为0的情况发生，参考[RETHINKING THE SMALLER-NORM-LESSINFORMATIVE ASSUMPTION IN CHANNEL PRUNING OF CONVOLUTION LAYERS(ICLR 2018)](https://arxiv.org/abs/1802.00124?context=cs)对剪枝后bn层β系数进行了保留
+
+# 待完成
+coco测试
